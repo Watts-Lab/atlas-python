@@ -20,13 +20,16 @@ class AuthManager:
         self.token_expiry: Optional[datetime] = None
         self.cookies: Dict[str, str] = {}
 
-    def login(self, email: str, use_stored_token: bool = True) -> Dict[str, Any]:
+    def login(
+        self, email: str, use_stored_token: bool = True, is_sdk: bool = True
+    ) -> Dict[str, Any]:
         """
         Initiate login process or use stored token if available.
 
         Args:
             email: User's email address
             use_stored_token: Whether to try using a stored token first
+            is_sdk: Whether this is an SDK login request
 
         Returns:
             Response from login endpoint or stored credentials
@@ -50,14 +53,21 @@ class AuthManager:
                     self.jwt_token = None
                     self.cookies = {}
 
-        # Request new magic link
+        # Request new magic link with SDK flag
         try:
-            response = requests.post(f"{self.base_url}/login", json={"email": email})
+            response = requests.post(
+                f"{self.base_url}/login",
+                json={"email": email, "client_type": "sdk" if is_sdk else "web"},
+            )
             response.raise_for_status()
 
             result: Dict[str, Any] = response.json()
-            print(f"📧 Magic link sent to {email}")
-            print("Check your email and run validate_magic_link() with the token")
+            if is_sdk:
+                print(f"📧 Login token sent to {email}")
+                print("Check your email and copy the token to validate_magic_link()")
+            else:
+                print(f"📧 Magic link sent to {email}")
+                print("Check your email and click the link to login")
             return result
 
         except requests.HTTPError as e:

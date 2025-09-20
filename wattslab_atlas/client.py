@@ -60,7 +60,7 @@ class AtlasClient:
             # OR
             📧 Magic link sent to user@example.com
         """
-        return self.auth.login(email, use_stored_token=auto_login)
+        return self.auth.login(email, use_stored_token=auto_login, is_sdk=True)
 
     def validate_magic_link(self, token: str, email: Optional[str] = None) -> Dict[str, Any]:
         """
