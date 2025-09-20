@@ -1,7 +1,7 @@
 """Quick start example for Atlas SDK."""
 
-from atlas_sdk import AtlasClient
-from atlas_sdk.models import FeatureCreate
+from wattslab_atlas import AtlasClient
+from wattslab_atlas.models import FeatureCreate
 
 
 def main():

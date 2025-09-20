@@ -4,9 +4,9 @@ import pytest
 from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime, timedelta
 
-from atlas_sdk.auth import AuthManager
-from atlas_sdk.storage import TokenStorage
-from atlas_sdk.exceptions import AuthenticationError
+from wattslab_atlas.auth import AuthManager
+from wattslab_atlas.storage import TokenStorage
+from wattslab_atlas.exceptions import AuthenticationError
 
 
 @pytest.fixture

@@ -17,7 +17,7 @@ except ImportError:
 class TokenStorage:
     """Handles secure storage of authentication tokens."""
 
-    SERVICE_NAME = "atlas-sdk"
+    SERVICE_NAME = "wattslab-atlas"
     CONFIG_DIR = Path.home() / ".atlas"
     TOKEN_FILE = CONFIG_DIR / "auth.json"
 

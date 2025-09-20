@@ -6,7 +6,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch, mock_open, MagicMock
 
-from atlas_sdk.storage import TokenStorage
+from wattslab_atlas.storage import TokenStorage
 
 
 class TestTokenStorage:
@@ -17,11 +17,11 @@ class TestTokenStorage:
         """Test storage initialization."""
         storage = TokenStorage(use_keyring=False)
 
-        assert storage.SERVICE_NAME == "atlas-sdk"
+        assert storage.SERVICE_NAME == "wattslab-atlas"
         mock_mkdir.assert_called_once()
 
     @patch("keyring.set_password")
-    @patch("atlas_sdk.storage.KEYRING_AVAILABLE", True)
+    @patch("wattslab_atlas.storage.KEYRING_AVAILABLE", True)
     def test_save_token_with_keyring(self, mock_set_password):
         """Test saving token with keyring."""
         storage = TokenStorage(use_keyring=True)
@@ -29,10 +29,10 @@ class TestTokenStorage:
         with patch.object(storage, "_save_metadata") as mock_metadata:
             storage.save_token("test@example.com", "test-token", 3600)
 
-            mock_set_password.assert_called_once_with("atlas-sdk", "test@example.com", "test-token")
+            mock_set_password.assert_called_once_with("wattslab-atlas", "test@example.com", "test-token")
             mock_metadata.assert_called_once()
 
-    @patch("atlas_sdk.storage.KEYRING_AVAILABLE", False)
+    @patch("wattslab_atlas.storage.KEYRING_AVAILABLE", False)
     def test_save_token_without_keyring(self):
         """Test saving token without keyring."""
         storage = TokenStorage(use_keyring=False)
@@ -43,7 +43,7 @@ class TestTokenStorage:
             mock_save.assert_called_once_with("test@example.com", "test-token", 3600)
 
     @patch("keyring.get_password")
-    @patch("atlas_sdk.storage.KEYRING_AVAILABLE", True)
+    @patch("wattslab_atlas.storage.KEYRING_AVAILABLE", True)
     def test_get_token_with_keyring(self, mock_get_password):
         """Test getting token with keyring."""
         mock_get_password.return_value = "stored-token"
@@ -66,7 +66,7 @@ class TestTokenStorage:
             assert token == "file-token"
 
     @patch("keyring.delete_password")
-    @patch("atlas_sdk.storage.KEYRING_AVAILABLE", True)
+    @patch("wattslab_atlas.storage.KEYRING_AVAILABLE", True)
     def test_delete_token(self, mock_delete_password):
         """Test deleting token."""
         storage = TokenStorage(use_keyring=True)

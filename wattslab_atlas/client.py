@@ -4,10 +4,10 @@ import requests
 from typing import Optional, Dict, Any, List, Union
 from pathlib import Path
 
-from atlas_sdk.auth import AuthManager
-from atlas_sdk.models import Feature, FeatureCreate, PaperList
-from atlas_sdk.exceptions import APIError, ResourceNotFoundError, ValidationError
-from atlas_sdk.storage import TokenStorage
+from wattslab_atlas.auth import AuthManager
+from wattslab_atlas.models import Feature, FeatureCreate, PaperList
+from wattslab_atlas.exceptions import APIError, ResourceNotFoundError, ValidationError
+from wattslab_atlas.storage import TokenStorage
 
 
 class AtlasClient:
@@ -15,7 +15,7 @@ class AtlasClient:
     Atlas API client - Simple and synchronous.
 
     Example:
-        >>> from atlas_sdk import AtlasClient
+        >>> from wattslab_atlas import AtlasClient
         >>> client = AtlasClient()
         >>> client.login("user@example.com")
         >>> # Check email for magic link
@@ -144,7 +144,7 @@ class AtlasClient:
             Created Feature object
 
         Example:
-            >>> from atlas_sdk.models import FeatureCreate
+            >>> from wattslab_atlas.models import FeatureCreate
             >>> feature = FeatureCreate(
             ...     feature_name="Study Type",
             ...     feature_description="Type of research study",

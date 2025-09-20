@@ -1,14 +1,14 @@
 """Atlas SDK - Python client for Atlas API."""
 
-from atlas_sdk.client import AtlasClient
-from atlas_sdk.exceptions import (
+from wattslab_atlas.client import AtlasClient
+from wattslab_atlas.exceptions import (
     AtlasException,
     AuthenticationError,
     APIError,
     ResourceNotFoundError,
 )
 
-__version__ = "2.0.1"
+__version__ = "1.0.0"
 __all__ = [
     "AtlasClient",
     "AtlasException",

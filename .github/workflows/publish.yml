@@ -51,7 +51,7 @@ jobs:
     if: github.event.inputs.test_pypi == 'true' || github.event_name == 'release'
     environment:
       name: test-pypi
-      url: https://test.pypi.org/project/atlas-sdk/
+      url: https://test.pypi.org/project/wattslab-atlas/
 
     steps:
       - name: Download artifacts
@@ -78,8 +78,8 @@ jobs:
       - name: Test installation from Test PyPI
         run: |
           sleep 60  # Wait for package to be available
-          pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ atlas-sdk
-          python -c "import atlas_sdk; print(f'Successfully installed atlas-sdk {atlas_sdk.__version__}')"
+          pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ wattslab-atlas
+          python -c "import wattslab_atlas; print(f'Successfully installed wattslab-atlas {wattslab_atlas.__version__}')"
 
   pypi:
     needs: [build, test-pypi]
@@ -87,7 +87,7 @@ jobs:
     if: github.event_name == 'release' || github.event.inputs.test_pypi == 'false'
     environment:
       name: pypi
-      url: https://pypi.org/project/atlas-sdk/
+      url: https://pypi.org/project/wattslab-atlas/
 
     steps:
       - name: Download artifacts

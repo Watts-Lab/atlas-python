@@ -1,5 +1,5 @@
 [run]
-source = atlas_sdk
+source = wattslab_atlas
 omit = 
     */tests/*
     */test_*.py

@@ -6,8 +6,8 @@ from unittest.mock import Mock, patch, MagicMock, mock_open
 from pathlib import Path
 import tempfile
 
-from atlas_sdk import AtlasClient, AuthenticationError, APIError, ResourceNotFoundError
-from atlas_sdk.models import Feature, FeatureCreate, Paper, PaperList
+from wattslab_atlas import AtlasClient, AuthenticationError, APIError, ResourceNotFoundError
+from wattslab_atlas.models import Feature, FeatureCreate, Paper, PaperList
 
 
 @pytest.fixture

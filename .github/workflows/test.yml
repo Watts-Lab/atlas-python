@@ -37,15 +37,15 @@ jobs:
 
       - name: Lint with black
         run: |
-          black --check atlas_sdk/ tests/
+          black --check wattslab_atlas/ tests/
 
       - name: Type check with mypy
         run: |
-          mypy atlas_sdk/ --ignore-missing-imports
+          mypy wattslab_atlas/ --ignore-missing-imports
 
       - name: Test with pytest
         run: |
-          pytest tests/ -v --cov=atlas_sdk --cov-report=xml --cov-report=term
+          pytest tests/ -v --cov=wattslab_atlas --cov-report=xml --cov-report=term
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3

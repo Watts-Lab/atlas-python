@@ -5,8 +5,8 @@ from typing import Optional, Dict, Any
 import requests
 from datetime import datetime, timedelta
 
-from atlas_sdk.exceptions import AuthenticationError
-from atlas_sdk.storage import TokenStorage
+from wattslab_atlas.exceptions import AuthenticationError
+from wattslab_atlas.storage import TokenStorage
 
 
 class AuthManager:

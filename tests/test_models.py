@@ -3,7 +3,7 @@
 import pytest
 from datetime import datetime
 
-from atlas_sdk.models import Feature, FeatureCreate, Paper, PaperList
+from wattslab_atlas.models import Feature, FeatureCreate, Paper, PaperList
 
 
 class TestFeatureModel:

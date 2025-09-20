@@ -5,13 +5,13 @@ Official Python SDK for the Atlas API
 ## Installation
 
 ```bash
-pip install atlas-sdk
+pip install wattslab-atlas
 ```
 
 ## Quick Start
 
 ```python
-from atlas_sdk import AtlasClient
+from wattslab_atlas import AtlasClient
 
 # Initialize (auto-saves tokens for reuse)
 client = AtlasClient()
@@ -76,7 +76,7 @@ client.logout()
 **Working with Features**
 
 ```python
-from atlas_sdk.models import FeatureCreate
+from wattslab_atlas.models import FeatureCreate
 
 # List all features
 features = client.list_features()
@@ -140,7 +140,7 @@ print(f"Reprocessing {result['total_papers']} papers")
 **Error Handling**
 
 ```python
-from atlas_sdk import AtlasClient, AuthenticationError, ResourceNotFoundError
+from wattslab_atlas import AtlasClient, AuthenticationError, ResourceNotFoundError
 
 client = AtlasClient()
 
