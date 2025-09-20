@@ -29,7 +29,9 @@ class TestTokenStorage:
         with patch.object(storage, "_save_metadata") as mock_metadata:
             storage.save_token("test@example.com", "test-token", 3600)
 
-            mock_set_password.assert_called_once_with("wattslab-atlas", "test@example.com", "test-token")
+            mock_set_password.assert_called_once_with(
+                "wattslab-atlas", "test@example.com", "test-token"
+            )
             mock_metadata.assert_called_once()
 
     @patch("wattslab_atlas.storage.KEYRING_AVAILABLE", False)
