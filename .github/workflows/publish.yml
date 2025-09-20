@@ -82,7 +82,7 @@ jobs:
           python -c "import wattslab_atlas; print(f'Successfully installed wattslab-atlas {wattslab_atlas.__version__}')"
 
   pypi:
-    needs: [build, test-pypi]
+    needs: [build]
     runs-on: ubuntu-latest
     if: github.event_name == 'release' || github.event.inputs.test_pypi == 'false'
     environment:
