@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Optional, Union
 
 import requests
 
-from wattslab_atlas import __version__
 from wattslab_atlas.auth import AuthManager
 from wattslab_atlas.exceptions import APIError, ResourceNotFoundError, ValidationError
 from wattslab_atlas.models import Feature, FeatureCreate, PaperList, Project
@@ -47,6 +46,8 @@ class AtlasClient:
         """
         # Log SDK version on initialization
         try:
+            from wattslab_atlas import __version__
+
             logger.info("Atlas SDK version: %s", __version__)
         except (ImportError, AttributeError):
             logger.info("Atlas SDK version: unknown")
@@ -381,7 +382,8 @@ class AtlasClient:
             >>> print(project_info["project"]["title"])
         """
         response = self._request("GET", f"/v1/projects/{project_id}")
-        return response.json()
+        result: Dict[str, Any] = response.json()
+        return result
 
     def get_project_results(
         self, project_id: str, include_versions: bool = False
@@ -411,7 +413,8 @@ class AtlasClient:
             params["include_versions"] = "true"
 
         response = self._request("GET", f"/v1/projects/{project_id}/results", params=params)
-        return response.json()
+        result: Dict[str, Any] = response.json()
+        return result
 
     def create_project(
         self, name: str, description: Optional[str] = None, features: Optional[List[str]] = None
@@ -434,7 +437,7 @@ class AtlasClient:
             ...     features=["feature-id-1", "feature-id-2"]
             ... )
         """
-        data = {
+        data: Dict[str, Any] = {
             "project_name": name,
             "project_description": description or f"Created on {datetime.now()}",
         }
@@ -443,7 +446,8 @@ class AtlasClient:
 
         response = self._request("POST", "/v1/projects/", json=data)
         result = response.json()
-        return result["project_id"]
+        project_id: str = result["project_id"]  # Store in typed variable
+        return project_id
 
     def update_project(
         self,
@@ -464,7 +468,7 @@ class AtlasClient:
         Returns:
             Updated project information
         """
-        data = {}
+        data: Dict[str, Any] = {}
         if name:
             data["project_name"] = name
         if description:
@@ -473,7 +477,8 @@ class AtlasClient:
             data["project_prompt"] = prompt
 
         response = self._request("PUT", f"/v1/projects/{project_id}", json=data)
-        return response.json()
+        result: Dict[str, Any] = response.json()
+        return result
 
     def delete_project(self, project_id: str) -> Dict[str, Any]:
         """
@@ -486,7 +491,8 @@ class AtlasClient:
             Response message
         """
         response = self._request("DELETE", f"/v1/projects/{project_id}")
-        return response.json()
+        result: Dict[str, Any] = response.json()
+        return result
 
     def get_project_with_results(self, project_id: str) -> Dict[str, Any]:
         """

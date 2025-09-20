@@ -2,7 +2,7 @@
 
 from typing import Optional, List, Dict, Any
 from datetime import datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class Feature(BaseModel):
@@ -94,18 +94,7 @@ class ProjectResult(BaseModel):
     _result_id: str
     _paper_id: Optional[str] = None
 
-    # The actual result data as a dict to keep it flexible
-    class Config:
-        """
-        Configuration class for model settings.
-
-        Attributes:
-            extra (str): Specifies how to handle extra fields in input data.
-                Setting to "allow" permits additional fields from the JSON response
-                that are not explicitly defined in the model.
-        """
-
-        extra = "allow"  # Allow additional fields from json_response
+    model_config = ConfigDict(extra="allow")
 
 
 class ProjectResultsResponse(BaseModel):

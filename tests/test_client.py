@@ -60,6 +60,7 @@ class TestAuthentication:
         mock_post.assert_called_once_with(
             "http://localhost:8080/api/login",
             json={"email": "test@example.com", "client_type": "sdk"},
+            timeout=10,
         )
 
     @patch("requests.post")
