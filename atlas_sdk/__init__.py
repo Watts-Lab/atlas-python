@@ -8,7 +8,7 @@ from atlas_sdk.exceptions import (
     ResourceNotFoundError,
 )
 
-__version__ = "0.1.1"
+__version__ = "0.1.0"
 __all__ = [
     "AtlasClient",
     "AtlasException",
