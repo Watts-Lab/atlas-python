@@ -18,17 +18,18 @@ class TokenStorage:
     """Handles secure storage of authentication tokens."""
 
     SERVICE_NAME = "wattslab-atlas"
-    CONFIG_DIR = Path.home() / ".atlas"
-    TOKEN_FILE = CONFIG_DIR / "auth.json"
 
-    def __init__(self, use_keyring: bool = True):
+    def __init__(self, use_keyring: bool = True, config_dir: Optional[Path] = None):
         """
         Initialize token storage.
 
         Args:
             use_keyring: Whether to use system keyring for secure storage
+            config_dir: Optional custom directory for storing token file
         """
         self.use_keyring = use_keyring and KEYRING_AVAILABLE
+        self.CONFIG_DIR = config_dir if config_dir is not None else Path.home() / ".atlas"
+        self.TOKEN_FILE = self.CONFIG_DIR / "auth.json"
 
         # Ensure config directory exists
         self.CONFIG_DIR.mkdir(parents=True, exist_ok=True)

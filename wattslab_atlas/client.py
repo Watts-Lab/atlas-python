@@ -1,13 +1,19 @@
 """Main Atlas SDK client."""
 
-import requests
-from typing import Optional, Dict, Any, List, Union
+import logging
+from datetime import datetime
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
+import requests
+
+from wattslab_atlas import __version__
 from wattslab_atlas.auth import AuthManager
-from wattslab_atlas.models import Feature, FeatureCreate, PaperList
 from wattslab_atlas.exceptions import APIError, ResourceNotFoundError, ValidationError
+from wattslab_atlas.models import Feature, FeatureCreate, PaperList, Project
 from wattslab_atlas.storage import TokenStorage
+
+logger = logging.getLogger(__name__)
 
 
 class AtlasClient:
@@ -28,6 +34,7 @@ class AtlasClient:
         base_url: str = "https://atlas.seas.upenn.edu/api",
         timeout: int = 30,
         auto_save_token: bool = True,
+        token_storage_path: Optional[Union[str, Path]] = None,
     ):
         """
         Initialize Atlas client.
@@ -36,10 +43,22 @@ class AtlasClient:
             base_url: Base URL for Atlas API
             timeout: Request timeout in seconds
             auto_save_token: Whether to automatically save tokens for reuse
+            token_storage_path: Optional custom path for token storage file
         """
+        # Log SDK version on initialization
+        try:
+            logger.info("Atlas SDK version: %s", __version__)
+        except (ImportError, AttributeError):
+            logger.info("Atlas SDK version: unknown")
+
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
-        storage = TokenStorage() if auto_save_token else None
+        storage = None
+        if auto_save_token:
+            config_dir = None
+            if token_storage_path is not None:
+                config_dir = Path(token_storage_path)
+            storage = TokenStorage(config_dir=config_dir)
         self.auth = AuthManager(self.base_url, storage)
         self.session = requests.Session()
 
@@ -330,3 +349,162 @@ class AtlasClient:
         )
         result: Dict[str, Any] = response.json()
         return result
+
+    def list_projects(self) -> List[Project]:
+        """
+        List all your projects.
+
+        Returns:
+            List of Project objects
+
+        Example:
+            >>> projects = client.list_projects()
+            >>> for p in projects:
+            ...     print(f"{p.title}: {len(p.papers)} papers")
+        """
+        response = self._request("GET", "/v1/projects/")
+        data = response.json()
+        return [Project(**p) for p in data.get("project", [])]
+
+    def get_project(self, project_id: str) -> Dict[str, Any]:
+        """
+        Get detailed information about a specific project.
+
+        Args:
+            project_id: Project ID
+
+        Returns:
+            Dictionary with project details and results
+
+        Example:
+            >>> project_info = client.get_project("project-123")
+            >>> print(project_info["project"]["title"])
+        """
+        response = self._request("GET", f"/v1/projects/{project_id}")
+        return response.json()
+
+    def get_project_results(
+        self, project_id: str, include_versions: bool = False
+    ) -> Dict[str, Any]:
+        """
+        Get extraction results for a project.
+
+        Args:
+            project_id: Project ID
+            include_versions: If True, includes all versions of results (default: False)
+
+        Returns:
+            Dictionary containing:
+                - message: Status message
+                - results: List of result dictionaries
+                - ids: List of result IDs
+
+        Example:
+            >>> results = client.get_project_results("project-123")
+            >>> print(f"Found {len(results['results'])} results")
+            >>>
+            >>> # Get all versions
+            >>> all_results = client.get_project_results("project-123", include_versions=True)
+        """
+        params = {}
+        if include_versions:
+            params["include_versions"] = "true"
+
+        response = self._request("GET", f"/v1/projects/{project_id}/results", params=params)
+        return response.json()
+
+    def create_project(
+        self, name: str, description: Optional[str] = None, features: Optional[List[str]] = None
+    ) -> str:
+        """
+        Create a new project.
+
+        Args:
+            name: Project name
+            description: Optional project description
+            features: Optional list of feature IDs to include
+
+        Returns:
+            Project ID of created project
+
+        Example:
+            >>> project_id = client.create_project(
+            ...     "My Research Project",
+            ...     description="Analysis of papers",
+            ...     features=["feature-id-1", "feature-id-2"]
+            ... )
+        """
+        data = {
+            "project_name": name,
+            "project_description": description or f"Created on {datetime.now()}",
+        }
+        if features:
+            data["project_features"] = features
+
+        response = self._request("POST", "/v1/projects/", json=data)
+        result = response.json()
+        return result["project_id"]
+
+    def update_project(
+        self,
+        project_id: str,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        prompt: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Update a project's details.
+
+        Args:
+            project_id: Project ID to update
+            name: New project name (optional)
+            description: New description (optional)
+            prompt: New prompt (optional)
+
+        Returns:
+            Updated project information
+        """
+        data = {}
+        if name:
+            data["project_name"] = name
+        if description:
+            data["project_description"] = description
+        if prompt:
+            data["project_prompt"] = prompt
+
+        response = self._request("PUT", f"/v1/projects/{project_id}", json=data)
+        return response.json()
+
+    def delete_project(self, project_id: str) -> Dict[str, Any]:
+        """
+        Delete a project.
+
+        Args:
+            project_id: Project ID to delete
+
+        Returns:
+            Response message
+        """
+        response = self._request("DELETE", f"/v1/projects/{project_id}")
+        return response.json()
+
+    def get_project_with_results(self, project_id: str) -> Dict[str, Any]:
+        """
+        Get project details along with its latest results.
+        Convenience method that combines project info and results.
+
+        Args:
+            project_id: Project ID
+
+        Returns:
+            Dictionary with both project details and results
+
+        Example:
+            >>> data = client.get_project_with_results("project-123")
+            >>> print(f"Project: {data['project']['title']}")
+            >>> print(f"Results: {len(data['results']['results'])}")
+        """
+        project = self.get_project(project_id)
+        results = self.get_project_results(project_id)
+
+        return {"project": project.get("project"), "results": results}

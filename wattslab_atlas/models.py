@@ -66,3 +66,51 @@ class ProcessingTask(BaseModel):
     paper_id: Optional[str] = None
     status: Optional[str] = None
     message: Optional[str] = None
+
+
+class Project(BaseModel):
+    """Project model."""
+
+    id: str
+    title: str
+    description: str
+    updated_at: datetime
+    papers: List[str] = Field(default_factory=list)
+    results: Optional[List[Dict[str, Any]]] = None
+
+
+class ProjectList(BaseModel):
+    """Project list response."""
+
+    project: List[Project]
+
+
+class ProjectResult(BaseModel):
+    """Minimal result model for project results."""
+
+    created_at: Optional[str] = None
+    _version: int = 1
+    _is_latest: bool = True
+    _result_id: str
+    _paper_id: Optional[str] = None
+
+    # The actual result data as a dict to keep it flexible
+    class Config:
+        """
+        Configuration class for model settings.
+
+        Attributes:
+            extra (str): Specifies how to handle extra fields in input data.
+                Setting to "allow" permits additional fields from the JSON response
+                that are not explicitly defined in the model.
+        """
+
+        extra = "allow"  # Allow additional fields from json_response
+
+
+class ProjectResultsResponse(BaseModel):
+    """Response for project results endpoint."""
+
+    message: str
+    results: List[Dict[str, Any]]
+    ids: List[str]

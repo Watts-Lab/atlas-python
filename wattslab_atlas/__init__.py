@@ -8,7 +8,7 @@ from wattslab_atlas.exceptions import (
     ResourceNotFoundError,
 )
 
-__version__ = "1.0.1"
+__version__ = "1.1.0"
 __all__ = [
     "AtlasClient",
     "AtlasException",

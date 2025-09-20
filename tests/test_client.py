@@ -58,7 +58,8 @@ class TestAuthentication:
         result = client.login("test@example.com", auto_login=False)
         assert result["message"] == "Magic link sent"
         mock_post.assert_called_once_with(
-            "http://localhost:8080/api/login", json={"email": "test@example.com", "client_type": "sdk"}
+            "http://localhost:8080/api/login",
+            json={"email": "test@example.com", "client_type": "sdk"},
         )
 
     @patch("requests.post")

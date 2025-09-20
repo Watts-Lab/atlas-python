@@ -27,15 +27,15 @@ def main():
         print(f"  • {feature.feature_name}: {feature.feature_description}")
 
     # Create a new feature
-    print("\n=== Creating Feature ===")
-    new_feature = FeatureCreate(
-        feature_name="Sample Size",
-        feature_description="Number of participants in the study",
-        feature_identifier="sample_size",
-        feature_type="integer",
-    )
-    created = client.create_feature(new_feature)
-    print(f"Created: {created.feature_name} (ID: {created.id})")
+    # print("\n=== Creating Feature ===")
+    # new_feature = FeatureCreate(
+    #     feature_name="Sample Size",
+    #     feature_description="Number of participants in the study",
+    #     feature_identifier="sample_size",
+    #     feature_type="integer",
+    # )
+    # created = client.create_feature(new_feature)
+    # print(f"Created: {created.feature_name} (ID: {created.id})")
 
     # List papers
     print("\n=== Papers ===")
