@@ -32,7 +32,7 @@ class FeatureCreate(BaseModel):
 
     def to_gpt_interface(self) -> Dict[str, Any]:
         """Convert to GPT interface format."""
-        interface = {
+        interface: Dict[str, Any] = {
             "type": self.feature_type,
             "description": self.feature_description,
         }

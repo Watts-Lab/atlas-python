@@ -12,7 +12,7 @@ from atlas_sdk.storage import TokenStorage
 class AuthManager:
     """Manages authentication for Atlas API."""
 
-    def __init__(self, base_url: str, storage: TokenStorage = None):
+    def __init__(self, base_url: str, storage: Optional[TokenStorage] = None):
         self.base_url = base_url
         self.storage = storage or TokenStorage()
         self.jwt_token: Optional[str] = None
@@ -55,7 +55,7 @@ class AuthManager:
             response = requests.post(f"{self.base_url}/login", json={"email": email})
             response.raise_for_status()
 
-            result = response.json()
+            result: Dict[str, Any] = response.json()
             print(f"📧 Magic link sent to {email}")
             print("Check your email and run validate_magic_link() with the token")
             return result
@@ -65,7 +65,7 @@ class AuthManager:
         except Exception as e:
             raise AuthenticationError(f"Login failed: {str(e)}")
 
-    def validate_magic_link(self, magic_link: str, email: str = None) -> Dict[str, Any]:
+    def validate_magic_link(self, magic_link: str, email: Optional[str] = None) -> Dict[str, Any]:
         """
         Validate the magic link received via email.
 
@@ -79,15 +79,17 @@ class AuthManager:
         if not email and not self.email:
             raise AuthenticationError("Email is required for validation")
 
-        email = email or self.email
+        use_email = email or self.email
+        if not use_email:  # Type guard for mypy
+            raise AuthenticationError("Email is required")
 
         try:
             response = requests.post(
-                f"{self.base_url}/validate", json={"email": email, "magic_link": magic_link}
+                f"{self.base_url}/validate", json={"email": use_email, "magic_link": magic_link}
             )
             response.raise_for_status()
 
-            result = response.json()
+            result: Dict[str, Any] = response.json()
 
             # Extract JWT from cookies
             if response.cookies:
@@ -98,7 +100,7 @@ class AuthManager:
                     self.token_expiry = datetime.now() + timedelta(hours=48)
 
                     # Save token for future use
-                    self.storage.save_token(email, jwt_token, expires_in=172800)
+                    self.storage.save_token(use_email, jwt_token, expires_in=172800)
                     print(f"✓ Authentication successful! Token saved for future use.")
 
             return result
@@ -122,7 +124,7 @@ class AuthManager:
 
         try:
             response = requests.get(f"{self.base_url}/check", cookies=self.cookies)
-            return response.status_code == 200
+            return bool(response.status_code == 200)
         except:
             return False
 
@@ -141,7 +143,8 @@ class AuthManager:
             self.cookies = {}
 
             print("✓ Logged out successfully")
-            return response.json()
+            result: Dict[str, Any] = response.json()
+            return result
 
         except Exception as e:
             raise AuthenticationError(f"Logout failed: {str(e)}")

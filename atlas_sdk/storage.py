@@ -37,7 +37,7 @@ class TokenStorage:
         if platform.system() != "Windows":
             os.chmod(self.CONFIG_DIR, 0o700)
 
-    def save_token(self, email: str, token: str, expires_in: int = None) -> None:
+    def save_token(self, email: str, token: str, expires_in: Optional[int] = None) -> None:
         """
         Save authentication token securely.
 
@@ -94,7 +94,7 @@ class TokenStorage:
         # Also delete from file storage
         self._delete_from_file(email)
 
-    def _save_metadata(self, email: str, expires_in: int = None) -> None:
+    def _save_metadata(self, email: str, expires_in: Optional[int] = None) -> None:
         """Save token metadata to file."""
         metadata = self._load_all_metadata()
         metadata[email] = {"expires_in": expires_in, "last_used": None}
@@ -106,7 +106,7 @@ class TokenStorage:
         if platform.system() != "Windows":
             os.chmod(self.TOKEN_FILE, 0o600)
 
-    def _save_to_file(self, email: str, token: str, expires_in: int = None) -> None:
+    def _save_to_file(self, email: str, token: str, expires_in: Optional[int] = None) -> None:
         """Save token to encrypted file (fallback method)."""
         data = self._load_all_tokens()
         data[email] = {"token": token, "expires_in": expires_in}
@@ -122,7 +122,8 @@ class TokenStorage:
         """Get token from file storage."""
         data = self._load_all_tokens()
         if email in data:
-            return data[email].get("token")
+            token = data[email].get("token")
+            return token if isinstance(token, str) else None
         return None
 
     def _delete_from_file(self, email: str) -> None:
@@ -140,7 +141,8 @@ class TokenStorage:
 
         try:
             with open(self.TOKEN_FILE, "r") as f:
-                return json.load(f)
+                result: Dict[str, Any] = json.load(f)
+                return result
         except Exception:
             return {}
 

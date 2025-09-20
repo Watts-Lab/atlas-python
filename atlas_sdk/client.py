@@ -1,11 +1,11 @@
 """Main Atlas SDK client."""
 
 import requests
-from typing import Optional, Dict, Any, List, BinaryIO
+from typing import Optional, Dict, Any, List, Union
 from pathlib import Path
 
 from atlas_sdk.auth import AuthManager
-from atlas_sdk.models import Feature, FeatureCreate, Paper, PaperList
+from atlas_sdk.models import Feature, FeatureCreate, PaperList
 from atlas_sdk.exceptions import APIError, ResourceNotFoundError, ValidationError
 from atlas_sdk.storage import TokenStorage
 
@@ -39,8 +39,8 @@ class AtlasClient:
         """
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
-        self.storage = TokenStorage() if auto_save_token else None
-        self.auth = AuthManager(self.base_url, self.storage)
+        storage = TokenStorage() if auto_save_token else None
+        self.auth = AuthManager(self.base_url, storage)
         self.session = requests.Session()
 
     def login(self, email: str, auto_login: bool = True) -> Dict[str, Any]:
@@ -62,7 +62,7 @@ class AtlasClient:
         """
         return self.auth.login(email, use_stored_token=auto_login)
 
-    def validate_magic_link(self, token: str, email: str = None) -> Dict[str, Any]:
+    def validate_magic_link(self, token: str, email: Optional[str] = None) -> Dict[str, Any]:
         """
         Validate the magic link token from your email.
 
@@ -167,7 +167,8 @@ class AtlasClient:
             Response message
         """
         response = self._request("DELETE", f"/features/{feature_id}")
-        return response.json()
+        result: Dict[str, Any] = response.json()
+        return result
 
     # ========== Papers ==========
 
@@ -194,7 +195,7 @@ class AtlasClient:
         return PaperList(**response.json())
 
     def upload_paper(
-        self, project_id: str, file_path: str, strategy_type: str = "assistant_api"
+        self, project_id: str, file_path: Union[str, Path], strategy_type: str = "assistant_api"
     ) -> Dict[str, str]:
         """
         Upload a paper to a project.
@@ -211,16 +212,17 @@ class AtlasClient:
             >>> result = client.upload_paper("project-123", "paper.pdf")
             >>> print(f"Task ID: {result['paper.pdf']}")
         """
-        file_path = Path(file_path)
-        if not file_path.exists():
-            raise ValidationError(f"File not found: {file_path}")
+        path = Path(file_path)
+        if not path.exists():
+            raise ValidationError(f"File not found: {path}")
 
-        with open(file_path, "rb") as f:
-            files = {"files[]": (file_path.name, f, "application/pdf")}
+        with open(path, "rb") as f:
+            files = {"files[]": (path.name, f, "application/pdf")}
             data = {"project_id": project_id, "strategy_type": strategy_type}
 
             response = self._request("POST", "/add_paper", files=files, data=data)
-            return response.json()
+            result: Dict[str, str] = response.json()
+            return result
 
     def check_task_status(self, task_id: str) -> Dict[str, Any]:
         """
@@ -233,7 +235,8 @@ class AtlasClient:
             Task status information
         """
         response = self._request("GET", "/add_paper", params={"task_id": task_id})
-        return response.json()
+        result: Dict[str, Any] = response.json()
+        return result
 
     def reprocess_paper(
         self, paper_id: str, project_id: str, strategy_type: str = "assistant_api"
@@ -254,7 +257,8 @@ class AtlasClient:
             f"/reprocess_paper/{paper_id}",
             json={"project_id": project_id, "strategy_type": strategy_type},
         )
-        return response.json()
+        result: Dict[str, Any] = response.json()
+        return result
 
     # ========== Projects ==========
 
@@ -288,7 +292,8 @@ class AtlasClient:
             f"/projects/{project_id}/features",
             json={"project_id": project_id, "feature_ids": feature_ids},
         )
-        return response.json()
+        result: Dict[str, Any] = response.json()
+        return result
 
     def remove_project_features(self, project_id: str, feature_ids: List[str]) -> Dict[str, Any]:
         """
@@ -304,7 +309,8 @@ class AtlasClient:
         response = self._request(
             "DELETE", f"/projects/{project_id}/features", json={"feature_ids": feature_ids}
         )
-        return response.json()
+        result: Dict[str, Any] = response.json()
+        return result
 
     def reprocess_project(
         self, project_id: str, strategy_type: str = "assistant_api"
@@ -322,4 +328,5 @@ class AtlasClient:
         response = self._request(
             "POST", f"/reprocess_project/{project_id}", json={"strategy_type": strategy_type}
         )
-        return response.json()
+        result: Dict[str, Any] = response.json()
+        return result

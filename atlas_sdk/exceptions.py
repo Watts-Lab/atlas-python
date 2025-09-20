@@ -1,5 +1,7 @@
 """Exception classes for Atlas SDK."""
 
+from typing import Optional
+
 
 class AtlasException(Exception):
     """Base exception for all Atlas SDK errors."""
@@ -16,7 +18,7 @@ class AuthenticationError(AtlasException):
 class APIError(AtlasException):
     """Raised when API returns an error response."""
 
-    def __init__(self, message: str, status_code: int = None, response=None):
+    def __init__(self, message: str, status_code: Optional[int] = None, response=None):
         super().__init__(message)
         self.status_code = status_code
         self.response = response
