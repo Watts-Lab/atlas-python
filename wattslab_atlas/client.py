@@ -48,9 +48,9 @@ class AtlasClient:
         try:
             from wattslab_atlas import __version__
 
-            logger.info("Atlas SDK version: %s", __version__)
+            print("Atlas SDK version:", __version__)
         except (ImportError, AttributeError):
-            logger.info("Atlas SDK version: unknown")
+            print("Atlas SDK version: unknown")
 
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
@@ -384,6 +384,33 @@ class AtlasClient:
         response = self._request("GET", f"/v1/projects/{project_id}")
         result: Dict[str, Any] = response.json()
         return result
+
+    def get_project_by_id(self, project_id: str) -> Project:
+        """
+        Get a Project object by ID with client attached.
+
+        This is a convenience method that combines get_project() with
+        the Project model, giving you an object-oriented interface.
+
+        Args:
+            project_id: Project ID
+
+        Returns:
+            Project object with client attached for auto-loading
+
+        Example:
+            >>> # Get project as object
+            >>> project = client.get_project_by_id("proj-123")
+            >>> print(project.title)
+            >>> print(f"Papers: {len(project.papers)}")
+            >>>
+            >>> # Use object methods
+            >>> results = project.get_results()
+            >>> features = project.get_features()
+            >>> project.update(name="New Name")
+        """
+
+        return Project.from_id(project_id, self)
 
     def get_project_results(
         self, project_id: str, include_versions: bool = False
