@@ -13,7 +13,7 @@ from wattslab_atlas.models import Feature, FeatureCreate, Paper, PaperList
 @pytest.fixture
 def client():
     """Create a test client."""
-    return AtlasClient(base_url="http://localhost:8080/api", auto_save_token=False)
+    return AtlasClient(base_url="http://localhost:8080/api/v1", auto_save_token=False)
 
 
 @pytest.fixture
@@ -31,16 +31,23 @@ class TestClientInitialization:
     def test_default_initialization(self):
         """Test client with default settings."""
         client = AtlasClient()
-        assert client.base_url == "https://atlas.seas.upenn.edu/api"
+        assert client.base_url == "https://atlas.seas.upenn.edu/api/v1"
         assert client.timeout == 30
 
     def test_custom_initialization(self):
         """Test client with custom settings."""
         client = AtlasClient(
-            base_url="http://localhost:8080/api", timeout=60, auto_save_token=False
+            base_url="http://localhost:8080/api/v1", timeout=60, api_key="atlas_test", auto_save_token=False
         )
-        assert client.base_url == "http://localhost:8080/api"
+        assert client.base_url == "http://localhost:8080/api/v1"
         assert client.timeout == 60
+        assert client.auth.get_headers() == {"X-API-Key": "atlas_test"}
+
+    @patch.dict("os.environ", {"ATLAS_API_KEY": "atlas_env"})
+    def test_api_key_from_environment(self):
+        """Test client reads API key from the environment."""
+        client = AtlasClient(auto_save_token=False)
+        assert client.auth.get_headers() == {"X-API-Key": "atlas_env"}
 
 
 class TestAuthentication:
@@ -58,7 +65,7 @@ class TestAuthentication:
         result = client.login("test@example.com", auto_login=False)
         assert result["message"] == "Magic link sent"
         mock_post.assert_called_once_with(
-            "http://localhost:8080/api/login",
+            "http://localhost:8080/api/v1/auth/login",
             json={"email": "test@example.com", "client_type": "sdk"},
             timeout=10,
         )
@@ -98,6 +105,26 @@ class TestAuthentication:
         assert result["message"] == "Logged out"
         assert auth_client.auth.jwt_token is None
         assert auth_client.auth.email is None
+
+
+class TestRequests:
+    """Test request authentication."""
+
+    @patch("requests.Session.request")
+    def test_request_sends_api_key_header(self, mock_request, client):
+        """Test API key is sent as X-API-Key."""
+        client.set_api_key("atlas_test")
+
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"features": []}
+        mock_request.return_value = mock_response
+
+        client.list_features()
+
+        _, kwargs = mock_request.call_args
+        assert kwargs["headers"] == {"X-API-Key": "atlas_test"}
+        assert "cookies" not in kwargs
 
 
 class TestFeatures:

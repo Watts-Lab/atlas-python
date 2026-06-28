@@ -15,13 +15,30 @@ logger = logging.getLogger(__name__)
 class AuthManager:
     """Manages authentication for Atlas API."""
 
-    def __init__(self, base_url: str, storage: Optional[TokenStorage] = None):
+    def __init__(
+        self,
+        base_url: str,
+        storage: Optional[TokenStorage] = None,
+        api_key: Optional[str] = None,
+    ):
         self.base_url = base_url
-        self.storage = storage or TokenStorage()
+        self._storage = storage
+        self.api_key = api_key
         self.jwt_token: Optional[str] = None
         self.email: Optional[str] = None
         self.token_expiry: Optional[datetime] = None
         self.cookies: Dict[str, str] = {}
+
+    @property
+    def storage(self) -> TokenStorage:
+        """Create token storage only when the legacy magic-link flow needs it."""
+        if self._storage is None:
+            self._storage = TokenStorage()
+        return self._storage
+
+    def set_api_key(self, api_key: Optional[str]) -> None:
+        """Set or clear the API key used for request authentication."""
+        self.api_key = api_key
 
     def login(
         self, email: str, use_stored_token: bool = True, is_sdk: bool = True
@@ -77,7 +94,7 @@ class AuthManager:
         # Request new magic link with SDK flag
         try:
             response = requests.post(
-                f"{self.base_url}/login",
+                f"{self.base_url}/auth/login",
                 json={"email": email, "client_type": "sdk" if is_sdk else "web"},
                 timeout=10,
             )
@@ -117,7 +134,7 @@ class AuthManager:
 
         try:
             response = requests.post(
-                f"{self.base_url}/validate",
+                f"{self.base_url}/auth/validate",
                 json={"email": use_email, "magic_link": magic_link},
                 timeout=10,
             )
@@ -153,12 +170,15 @@ class AuthManager:
         Returns:
             True if authenticated, False otherwise
         """
+        if self.api_key:
+            return True
+
         if not self.jwt_token:
             return False
 
         try:
             response = requests.get(
-                f"{self.base_url}/check",
+                f"{self.base_url}/auth/check",
                 cookies=self.cookies,
                 timeout=10,
             )
@@ -170,7 +190,7 @@ class AuthManager:
         """Logout the current user."""
         try:
             response = requests.post(
-                f"{self.base_url}/logout",
+                f"{self.base_url}/auth/logout",
                 cookies=self.cookies,
                 timeout=10,
             )
@@ -193,6 +213,8 @@ class AuthManager:
 
     def get_headers(self) -> Dict[str, str]:
         """Get authentication headers for requests."""
+        if self.api_key:
+            return {"X-API-Key": self.api_key}
         return {}
 
     def get_cookies(self) -> Dict[str, str]:

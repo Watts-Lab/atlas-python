@@ -12,11 +12,17 @@ from wattslab_atlas.exceptions import AuthenticationError
 @pytest.fixture
 def auth_manager():
     """Create an auth manager for testing."""
-    return AuthManager(base_url="http://localhost:8080/api")
+    return AuthManager(base_url="http://localhost:8080/api/v1")
 
 
 class TestAuthManager:
     """Test AuthManager class."""
+
+    def test_api_key_headers(self, auth_manager):
+        """Test API key header generation."""
+        auth_manager.set_api_key("atlas_test")
+        assert auth_manager.get_headers() == {"X-API-Key": "atlas_test"}
+        assert auth_manager.check_auth() is True
 
     @patch("requests.post")
     def test_login_request_magic_link(self, mock_post, auth_manager):

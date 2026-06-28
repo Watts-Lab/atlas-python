@@ -1,6 +1,7 @@
 """Main Atlas SDK client."""
 
 import logging
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
@@ -21,17 +22,15 @@ class AtlasClient:
 
     Example:
         >>> from wattslab_atlas import AtlasClient
-        >>> client = AtlasClient()
-        >>> client.login("user@example.com")
-        >>> # Check email for magic link
-        >>> client.validate_magic_link("token-from-email")
+        >>> client = AtlasClient(api_key="atlas_...")
         >>> features = client.list_features()
     """
 
     def __init__(
         self,
-        base_url: str = "https://atlas.seas.upenn.edu/api",
+        base_url: str = "https://atlas.seas.upenn.edu/api/v1",
         timeout: int = 30,
+        api_key: Optional[str] = None,
         auto_save_token: bool = True,
         token_storage_path: Optional[Union[str, Path]] = None,
     ):
@@ -41,7 +40,8 @@ class AtlasClient:
         Args:
             base_url: Base URL for Atlas API
             timeout: Request timeout in seconds
-            auto_save_token: Whether to automatically save tokens for reuse
+            api_key: Atlas API key. Defaults to the ATLAS_API_KEY environment variable.
+            auto_save_token: Whether to automatically save magic-link tokens for reuse
             token_storage_path: Optional custom path for token storage file
         """
         # Log SDK version on initialization
@@ -54,18 +54,26 @@ class AtlasClient:
 
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
+        self.api_key = api_key or os.getenv("ATLAS_API_KEY")
         storage = None
-        if auto_save_token:
+        if auto_save_token and not self.api_key:
             config_dir = None
             if token_storage_path is not None:
                 config_dir = Path(token_storage_path)
             storage = TokenStorage(config_dir=config_dir)
-        self.auth = AuthManager(self.base_url, storage)
+        self.auth = AuthManager(self.base_url, storage, api_key=self.api_key)
         self.session = requests.Session()
+
+    def set_api_key(self, api_key: Optional[str]) -> None:
+        """Set or replace the API key used for subsequent requests."""
+        self.api_key = api_key
+        self.auth.set_api_key(api_key)
 
     def login(self, email: str, auto_login: bool = True) -> Dict[str, Any]:
         """
-        Login to Atlas. Will try to use stored credentials if available.
+        Login to Atlas using the legacy magic-link flow.
+
+        API-key authentication is preferred for SDK usage.
 
         Args:
             email: Your email address
@@ -114,13 +122,21 @@ class AtlasClient:
         url = f"{self.base_url}{endpoint}"
 
         # Add authentication
-        kwargs["cookies"] = self.auth.get_cookies()
+        headers = dict(kwargs.pop("headers", {}) or {})
+        headers.update(self.auth.get_headers())
+        if headers:
+            kwargs["headers"] = headers
+
+        cookies = self.auth.get_cookies()
+        if cookies:
+            kwargs["cookies"] = cookies
+
         kwargs["timeout"] = self.timeout
 
         response = self.session.request(method, url, **kwargs)
 
         if response.status_code == 401:
-            raise APIError("Authentication required. Please login first.", 401)
+            raise APIError("Authentication required. Provide an API key or login first.", 401)
         elif response.status_code == 404:
             raise ResourceNotFoundError(f"Resource not found: {endpoint}")
         elif response.status_code >= 400:
@@ -240,7 +256,7 @@ class AtlasClient:
             files = {"files[]": (path.name, f, "application/pdf")}
             data = {"project_id": project_id, "strategy_type": strategy_type}
 
-            response = self._request("POST", "/add_paper", files=files, data=data)
+            response = self._request("POST", "/assistant/add_paper", files=files, data=data)
             result: Dict[str, str] = response.json()
             return result
 
@@ -254,7 +270,7 @@ class AtlasClient:
         Returns:
             Task status information
         """
-        response = self._request("GET", "/add_paper", params={"task_id": task_id})
+        response = self._request("GET", "/assistant/add_paper", params={"task_id": task_id})
         result: Dict[str, Any] = response.json()
         return result
 
@@ -274,7 +290,7 @@ class AtlasClient:
         """
         response = self._request(
             "POST",
-            f"/reprocess_paper/{paper_id}",
+            f"/assistant/reprocess_paper/{paper_id}",
             json={"project_id": project_id, "strategy_type": strategy_type},
         )
         result: Dict[str, Any] = response.json()
@@ -346,7 +362,7 @@ class AtlasClient:
             Dictionary with task IDs for all papers
         """
         response = self._request(
-            "POST", f"/reprocess_project/{project_id}", json={"strategy_type": strategy_type}
+            "POST", f"/assistant/reprocess_project/{project_id}", json={"strategy_type": strategy_type}
         )
         result: Dict[str, Any] = response.json()
         return result
@@ -363,7 +379,7 @@ class AtlasClient:
             >>> for p in projects:
             ...     print(f"{p.title}: {len(p.papers)} papers")
         """
-        response = self._request("GET", "/v1/projects/")
+        response = self._request("GET", "/projects/")
         data = response.json()
         return [Project(**p) for p in data.get("project", [])]
 
@@ -381,7 +397,7 @@ class AtlasClient:
             >>> project_info = client.get_project("project-123")
             >>> print(project_info["project"]["title"])
         """
-        response = self._request("GET", f"/v1/projects/{project_id}")
+        response = self._request("GET", f"/projects/{project_id}")
         result: Dict[str, Any] = response.json()
         return result
 
@@ -439,7 +455,7 @@ class AtlasClient:
         if include_versions:
             params["include_versions"] = "true"
 
-        response = self._request("GET", f"/v1/projects/{project_id}/results", params=params)
+        response = self._request("GET", f"/projects/{project_id}/results", params=params)
         result: Dict[str, Any] = response.json()
         return result
 
@@ -471,7 +487,7 @@ class AtlasClient:
         if features:
             data["project_features"] = features
 
-        response = self._request("POST", "/v1/projects/", json=data)
+        response = self._request("POST", "/projects/", json=data)
         result = response.json()
         project_id: str = result["project_id"]  # Store in typed variable
         return project_id
@@ -503,7 +519,7 @@ class AtlasClient:
         if prompt:
             data["project_prompt"] = prompt
 
-        response = self._request("PUT", f"/v1/projects/{project_id}", json=data)
+        response = self._request("PUT", f"/projects/{project_id}", json=data)
         result: Dict[str, Any] = response.json()
         return result
 
@@ -517,7 +533,7 @@ class AtlasClient:
         Returns:
             Response message
         """
-        response = self._request("DELETE", f"/v1/projects/{project_id}")
+        response = self._request("DELETE", f"/projects/{project_id}")
         result: Dict[str, Any] = response.json()
         return result
 
