@@ -362,7 +362,9 @@ class AtlasClient:
             Dictionary with task IDs for all papers
         """
         response = self._request(
-            "POST", f"/assistant/reprocess_project/{project_id}", json={"strategy_type": strategy_type}
+            "POST",
+            f"/assistant/reprocess_project/{project_id}",
+            json={"strategy_type": strategy_type},
         )
         result: Dict[str, Any] = response.json()
         return result

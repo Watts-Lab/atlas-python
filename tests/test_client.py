@@ -37,7 +37,10 @@ class TestClientInitialization:
     def test_custom_initialization(self):
         """Test client with custom settings."""
         client = AtlasClient(
-            base_url="http://localhost:8080/api/v1", timeout=60, api_key="atlas_test", auto_save_token=False
+            base_url="http://localhost:8080/api/v1",
+            timeout=60,
+            api_key="atlas_test",
+            auto_save_token=False,
         )
         assert client.base_url == "http://localhost:8080/api/v1"
         assert client.timeout == 60
