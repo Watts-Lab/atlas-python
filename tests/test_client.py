@@ -205,6 +205,35 @@ class TestFeatures:
         assert result["response"] == "success"
         mock_request.assert_called_once()
 
+    @patch("requests.Session.request")
+    def test_create_feature_response_without_created_by(self, mock_request, auth_client):
+        """A leaner create response (no created_by) must still parse.
+
+        Guards the SDK against server responses that omit optional fields.
+        """
+        mock_response = Mock()
+        mock_response.status_code = 201
+        mock_response.json.return_value = {
+            "feature": {
+                "id": "new-feat",
+                "feature_name": "New Feature",
+                "feature_description": "New Description",
+                "feature_identifier": "new_feature",
+            }
+        }
+        mock_request.return_value = mock_response
+
+        created = auth_client.create_feature(
+            FeatureCreate(
+                feature_name="New Feature",
+                feature_description="New Description",
+                feature_identifier="new_feature",
+                feature_prompt="Extract it",
+            )
+        )
+        assert created.id == "new-feat"
+        assert created.created_by is None
+
 
 class TestPapers:
     """Test paper-related methods."""

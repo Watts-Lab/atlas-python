@@ -20,7 +20,7 @@ class Feature(BaseModel):
     feature_prompt: Optional[str] = None
     feature_enum_options: Optional[List[str]] = Field(default_factory=list)
     is_shared: bool = False
-    created_by: str
+    created_by: Optional[str] = None
 
 
 class FeatureCreate(BaseModel):
