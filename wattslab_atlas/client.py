@@ -10,7 +10,15 @@ import requests
 
 from wattslab_atlas.auth import AuthManager
 from wattslab_atlas.exceptions import APIError, ResourceNotFoundError, ValidationError
-from wattslab_atlas.models import Feature, FeatureCreate, PaperList, Project, ProjectLLM
+from wattslab_atlas.models import (
+    Feature,
+    FeatureCreate,
+    LLMProvider,
+    LLMStrategy,
+    PaperList,
+    Project,
+    ProjectLLM,
+)
 from wattslab_atlas.storage import TokenStorage
 
 logger = logging.getLogger(__name__)
@@ -532,9 +540,9 @@ class AtlasClient:
     def set_project_llm(
         self,
         project_id: str,
-        provider: str = "atlas",
+        provider: LLMProvider = "atlas",
         model: Optional[str] = None,
-        strategy: str = "json_schema",
+        strategy: LLMStrategy = "json_schema",
     ) -> Dict[str, Any]:
         """
         Set the LLM provider, model, and extraction strategy for a project.
