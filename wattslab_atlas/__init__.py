@@ -7,6 +7,7 @@ from wattslab_atlas.exceptions import (
     APIError,
     ResourceNotFoundError,
 )
+from wattslab_atlas.models import AVAILABLE_MODELS, ProjectLLM
 
 __version__ = "1.3.0"
 __all__ = [
@@ -15,4 +16,6 @@ __all__ = [
     "AuthenticationError",
     "APIError",
     "ResourceNotFoundError",
+    "ProjectLLM",
+    "AVAILABLE_MODELS",
 ]

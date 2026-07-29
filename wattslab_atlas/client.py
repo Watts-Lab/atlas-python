@@ -10,7 +10,7 @@ import requests
 
 from wattslab_atlas.auth import AuthManager
 from wattslab_atlas.exceptions import APIError, ResourceNotFoundError, ValidationError
-from wattslab_atlas.models import Feature, FeatureCreate, PaperList, Project
+from wattslab_atlas.models import Feature, FeatureCreate, PaperList, Project, ProjectLLM
 from wattslab_atlas.storage import TokenStorage
 
 logger = logging.getLogger(__name__)
@@ -231,7 +231,7 @@ class AtlasClient:
         return PaperList(**response.json())
 
     def upload_paper(
-        self, project_id: str, file_path: Union[str, Path], strategy_type: str = "assistant_api"
+        self, project_id: str, file_path: Union[str, Path], strategy_type: str = "json_schema"
     ) -> Dict[str, str]:
         """
         Upload a paper to a project.
@@ -239,7 +239,7 @@ class AtlasClient:
         Args:
             project_id: Project ID to add paper to
             file_path: Path to the PDF file
-            strategy_type: Processing strategy (default: "assistant_api")
+            strategy_type: Processing strategy (default: "json_schema")
 
         Returns:
             Dictionary with filename and task ID
@@ -275,7 +275,7 @@ class AtlasClient:
         return result
 
     def reprocess_paper(
-        self, paper_id: str, project_id: str, strategy_type: str = "assistant_api"
+        self, paper_id: str, project_id: str, strategy_type: str = "json_schema"
     ) -> Dict[str, Any]:
         """
         Reprocess an existing paper.
@@ -349,7 +349,7 @@ class AtlasClient:
         return result
 
     def reprocess_project(
-        self, project_id: str, strategy_type: str = "assistant_api"
+        self, project_id: str, strategy_type: str = "json_schema"
     ) -> Dict[str, Any]:
         """
         Reprocess all papers in a project.
@@ -500,6 +500,7 @@ class AtlasClient:
         name: Optional[str] = None,
         description: Optional[str] = None,
         prompt: Optional[str] = None,
+        llm: Optional["ProjectLLM"] = None,
     ) -> Dict[str, Any]:
         """
         Update a project's details.
@@ -509,6 +510,7 @@ class AtlasClient:
             name: New project name (optional)
             description: New description (optional)
             prompt: New prompt (optional)
+            llm: New LLM provider/model/strategy config (optional)
 
         Returns:
             Updated project information
@@ -520,10 +522,44 @@ class AtlasClient:
             data["project_description"] = description
         if prompt:
             data["project_prompt"] = prompt
+        if llm is not None:
+            data["project_llm"] = llm.model_dump()
 
         response = self._request("PUT", f"/projects/{project_id}", json=data)
         result: Dict[str, Any] = response.json()
         return result
+
+    def set_project_llm(
+        self,
+        project_id: str,
+        provider: str = "atlas",
+        model: Optional[str] = None,
+        strategy: str = "json_schema",
+    ) -> Dict[str, Any]:
+        """
+        Set the LLM provider, model, and extraction strategy for a project.
+
+        Args:
+            project_id: Project ID to configure
+            provider: One of ``atlas``, ``openai``, ``anthropic``, ``openrouter``.
+                ``atlas`` uses Atlas' shared key (metered); the others use your
+                own saved key for that provider (not metered).
+            model: Exact model id, or ``None`` for the provider's default.
+                See ``wattslab_atlas.models.AVAILABLE_MODELS``.
+            strategy: ``json_schema`` (recommended) or ``assistant_api``
+                (OpenAI/Atlas only).
+
+        Returns:
+            Updated project information
+
+        Example:
+            >>> client.set_project_llm(
+            ...     "proj-123", provider="openrouter",
+            ...     model="anthropic/claude-opus-4.8",
+            ... )
+        """
+        llm = ProjectLLM(provider=provider, model=model, strategy=strategy)
+        return self.update_project(project_id, llm=llm)
 
     def delete_project(self, project_id: str) -> Dict[str, Any]:
         """

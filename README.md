@@ -68,12 +68,37 @@ feature = FeatureCreate(
     feature_name="Sample Size",
     feature_description="Number of participants",
     feature_identifier="sample_size",
-    feature_type="integer",
+    feature_prompt="Extract the total number of participants in the study.",
+    feature_type="number",
 )
 created = client.create_feature(feature)
 
 client.delete_feature(created.id)
 ```
+
+**Choosing a model & provider for a project**
+
+```python
+from wattslab_atlas import AVAILABLE_MODELS
+
+# See the curated model list per provider.
+print(AVAILABLE_MODELS)
+# {'atlas': ['gpt-5.4-mini', ...], 'openrouter': ['openai/gpt-5.4-mini',
+#  'anthropic/claude-opus-4.8'], ...}
+
+# Use Atlas' shared key (metered against your monthly budget) with the default model.
+client.set_project_llm(project_id, provider="atlas")
+
+# Or use your own OpenRouter key (billed by OpenRouter, not metered).
+client.set_project_llm(
+    project_id,
+    provider="openrouter",
+    model="anthropic/claude-opus-4.8",
+)
+```
+
+Providers other than `atlas` require a saved key for that provider in
+**Settings → Usage & Keys**. `model=None` uses the provider's default.
 
 **Working with Papers**
 

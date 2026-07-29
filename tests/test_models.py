@@ -49,12 +49,14 @@ class TestFeatureCreateModel:
             feature_name="New Feature",
             feature_description="New Description",
             feature_identifier="new_feature",
+            feature_prompt="Extract the new feature",
         )
 
         assert feature.feature_name == "New Feature"
-        assert feature.feature_type == "string"
+        assert feature.feature_type == "text"
         assert feature.is_shared is False
         assert feature.feature_parent is None
+        assert feature.feature_prompt == "Extract the new feature"
 
     def test_to_gpt_interface(self):
         """Test converting to GPT interface."""
@@ -62,13 +64,14 @@ class TestFeatureCreateModel:
             feature_name="Test",
             feature_description="Test Description",
             feature_identifier="test",
-            feature_type="integer",
+            feature_prompt="Extract the number",
+            feature_type="number",
         )
 
         interface = feature.to_gpt_interface()
 
-        assert interface["type"] == "integer"
-        assert interface["description"] == "Test Description"
+        assert interface["type"] == "number"
+        assert interface["description"] == "Extract the number"
         assert "enum" not in interface
 
     def test_to_gpt_interface_with_enum(self):
@@ -77,8 +80,9 @@ class TestFeatureCreateModel:
             feature_name="Type",
             feature_description="Type selection",
             feature_identifier="type",
-            feature_type="string",
-            feature_enum_options=["A", "B", "C"],
+            feature_prompt="Pick the type",
+            feature_type="enum",
+            enum_options=["A", "B", "C"],
         )
 
         interface = feature.to_gpt_interface()

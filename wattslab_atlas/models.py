@@ -1,6 +1,6 @@
 """Enhanced data models for Atlas SDK with auto-loading capabilities."""
 
-from typing import Optional, List, Dict, Any, TYPE_CHECKING
+from typing import Optional, List, Dict, Any, Literal, TYPE_CHECKING
 from datetime import datetime
 from pydantic import BaseModel, Field, ConfigDict
 
@@ -24,25 +24,71 @@ class Feature(BaseModel):
 
 
 class FeatureCreate(BaseModel):
-    """Model for creating a new feature."""
+    """Model for creating a new feature.
+
+    The field names and values here mirror what ``POST /api/v1/features`` expects:
+
+    - ``feature_prompt`` is **required** by the server (it becomes the LLM prompt
+      / schema description). Omitting it previously caused a 500 (see #250).
+    - ``feature_type`` must be one of ``text``, ``number``, ``boolean``, ``enum``,
+      or ``parent`` (NOT ``string``/``integer`` — those are internal GPT-schema
+      types, not accepted by the create endpoint).
+    - Enum choices are sent as ``enum_options`` (the server's field name).
+    """
 
     feature_name: str
-    feature_description: str
     feature_identifier: str
+    feature_prompt: str
+    feature_description: Optional[str] = ""
     feature_parent: Optional[str] = None
-    feature_type: str = "string"
-    feature_enum_options: Optional[List[str]] = Field(default_factory=list)
+    feature_type: Literal["text", "number", "boolean", "enum", "parent"] = "text"
+    enum_options: Optional[List[str]] = Field(default_factory=list)
     is_shared: bool = False
 
+    def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
+        """Serialize using the exact field names the server expects."""
+        return super().model_dump(**kwargs)
+
     def to_gpt_interface(self) -> Dict[str, Any]:
-        """Convert to GPT interface format."""
+        """Convert to a GPT interface preview (client-side convenience)."""
         interface: Dict[str, Any] = {
             "type": self.feature_type,
-            "description": self.feature_description,
+            "description": self.feature_prompt or self.feature_description,
         }
-        if self.feature_enum_options:
-            interface["enum"] = self.feature_enum_options
+        if self.enum_options:
+            interface["enum"] = self.enum_options
         return interface
+
+
+# Providers and models accepted by the project's LLM config. Keep these in sync
+# with the server (services/llm/resolver.py) and the web UI
+# (ProjectLLMSettings.tsx).
+LLMProvider = Literal["atlas", "openai", "anthropic", "openrouter"]
+LLMStrategy = Literal["json_schema", "assistant_api"]
+
+# Curated model choices per provider (label -> exact model id). ``None`` model
+# means "use that provider's default".
+AVAILABLE_MODELS: Dict[str, List[str]] = {
+    "atlas": ["gpt-5.4-mini", "gpt-5.4", "gpt-5.5"],
+    "openai": ["gpt-5.4-mini", "gpt-5.4", "gpt-5.5"],
+    "anthropic": ["claude-opus-4-8"],
+    "openrouter": ["openai/gpt-5.4-mini", "anthropic/claude-opus-4.8"],
+}
+
+
+class ProjectLLM(BaseModel):
+    """Per-project LLM configuration (provider / model / extraction strategy).
+
+    - ``provider``: ``atlas`` uses Atlas' shared key (metered); the others use
+      your own saved key for that provider (not metered).
+    - ``model``: an exact model id, or ``None`` for the provider's default.
+    - ``strategy``: ``json_schema`` (recommended) or ``assistant_api`` (OpenAI
+      / Atlas only).
+    """
+
+    provider: LLMProvider = "atlas"
+    model: Optional[str] = None
+    strategy: LLMStrategy = "json_schema"
 
 
 class Paper(BaseModel):

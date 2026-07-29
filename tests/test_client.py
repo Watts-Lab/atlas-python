@@ -177,12 +177,20 @@ class TestFeatures:
             feature_name="New Feature",
             feature_description="New Description",
             feature_identifier="new_feature",
+            feature_prompt="Extract the new feature",
         )
 
         created = auth_client.create_feature(new_feature)
 
         assert created.feature_name == "New Feature"
         assert created.id == "new-feat"
+
+        # Regression for #250: the request body MUST include feature_prompt and
+        # use the server's field names.
+        sent_json = mock_request.call_args.kwargs["json"]
+        assert sent_json["feature_prompt"] == "Extract the new feature"
+        assert sent_json["feature_type"] == "text"
+        assert "enum_options" in sent_json
 
     @patch("requests.Session.request")
     def test_delete_feature(self, mock_request, auth_client):
@@ -299,6 +307,46 @@ class TestProjects:
         result = auth_client.update_project_features("project-123", ["feat1", "feat2"])
 
         assert result["message"] == "Features updated"
+
+    @patch("requests.Session.request")
+    def test_set_project_llm(self, mock_request, auth_client):
+        """Setting provider/model/strategy sends the correct project_llm body."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"message": "Project updated."}
+        mock_request.return_value = mock_response
+
+        result = auth_client.set_project_llm(
+            "project-123",
+            provider="openrouter",
+            model="anthropic/claude-opus-4.8",
+            strategy="json_schema",
+        )
+
+        assert result["message"] == "Project updated."
+        sent_json = mock_request.call_args.kwargs["json"]
+        assert sent_json["project_llm"] == {
+            "provider": "openrouter",
+            "model": "anthropic/claude-opus-4.8",
+            "strategy": "json_schema",
+        }
+
+    @patch("requests.Session.request")
+    def test_set_project_llm_defaults_to_atlas(self, mock_request, auth_client):
+        """Defaults: atlas provider, no explicit model, json_schema strategy."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"message": "Project updated."}
+        mock_request.return_value = mock_response
+
+        auth_client.set_project_llm("project-123")
+
+        sent_json = mock_request.call_args.kwargs["json"]
+        assert sent_json["project_llm"] == {
+            "provider": "atlas",
+            "model": None,
+            "strategy": "json_schema",
+        }
 
     @patch("requests.Session.request")
     def test_reprocess_project(self, mock_request, auth_client):
