@@ -150,6 +150,6 @@ except ResourceNotFoundError as exc:
 
 ## Requirements
 
-- Python 3.9+
+- Python 3.10+
 - Atlas API key
 
